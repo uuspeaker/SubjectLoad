@@ -20,6 +20,8 @@ class SubjectItem(scrapy.Item):
     optionD = scrapy.Field()
     questionLevel = scrapy.Field()
     questionType = scrapy.Field()
+    knowledgeType = scrapy.Field()
+    questionResource = scrapy.Field()
     answer = scrapy.Field()
     parse = scrapy.Field()
 
