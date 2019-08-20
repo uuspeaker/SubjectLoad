@@ -14,6 +14,8 @@ BOT_NAME = 'SubjectLoad'
 SPIDER_MODULES = ['SubjectLoad.spiders']
 NEWSPIDER_MODULE = 'SubjectLoad.spiders'
 
+DEPTH_LIMIT = 0
+
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'SubjectLoad (+http://www.yourdomain.com)'
@@ -48,13 +50,11 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 #SPIDER_MIDDLEWARES = {
 #    'SubjectLoad.middlewares.SubjectloadSpiderMiddleware': 543,
-#}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #DOWNLOADER_MIDDLEWARES = {
 #    'SubjectLoad.middlewares.SubjectloadDownloaderMiddleware': 543,
-#}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
