@@ -1,5 +1,6 @@
 import scrapy
 import re
+import pymongo
 
 from SubjectLoad.SubjectItem import SubjectItem
 
@@ -32,6 +33,7 @@ class SubjectSpider(scrapy.Spider):
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
             print(item)
+            self.saveItem(item)
 
     def parseContent(self, contents):
         resultContent = []
@@ -48,3 +50,9 @@ class SubjectSpider(scrapy.Spider):
             resultContent.append(tmpContent)
 
         return resultContent
+
+    def saveItem(self, item):
+        myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
+        subjectData = myclient["SubjectData"]
+        xkwSubject = subjectData['xkw_subject']
+        xkwSubject.insert_one(item)
