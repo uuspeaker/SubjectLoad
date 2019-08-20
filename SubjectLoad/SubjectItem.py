@@ -11,6 +11,7 @@ import scrapy
 class SubjectItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
+    _id = scrapy.Field()
     id = scrapy.Field()
     key = scrapy.Field()
     knowledgeId = scrapy.Field()

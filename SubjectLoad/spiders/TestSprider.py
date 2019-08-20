@@ -56,3 +56,4 @@ class SubjectSpider(scrapy.Spider):
         subjectData = myclient["SubjectData"]
         xkwSubject = subjectData['xkw_subject']
         xkwSubject.insert_one(item)
+        print('mongo 保存成功')
