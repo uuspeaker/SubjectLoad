@@ -3,6 +3,7 @@ import re
 import os
 import pickle
 import json
+import pymongo
 
 from SubjectLoad.SubjectItem import SubjectItem
 
@@ -22,6 +23,9 @@ class SubjectSpider(scrapy.Spider):
     ]
     # file = open('subject.json', mode='wb')
     count = 0
+    myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
+    subjectData = myclient["SubjectData"]
+    xkwSubject = subjectData['xkw_subject']
 
     parentIds = ['6042', '6041', '5119', '5118', '5117', '4685', '5093', '5088', '5087', '5249', '5080', '5004', '5002', '5003','5001', '5092', '5094', '4962', '5101', '5100', '5098', '5199', '5162', '4982', '4980', '5102', '4979', '5099', '5194', '5193', '5192', '5190', '5189', '5188', '4972', '4984', '4983', '4971', '4970', '4969', '4976', '4975', '4974', '4978', '5195', '4968', '4964', '5116', '5115', '4967', '4966', '5157', '5191', '5105', '5174', '5173', '5172', '5171', '5164', '4977', '5170', '5185', '5184', '5246', '5228', '5207', '5206', '5163', '5245', '5244', '5238', '5237', '5226', '5222', '5217', '5216', '5210', '5186', '5235', '5168', '5167', '5166', '5165', '5234', '5224', '5223', '5233', '5232', '5243', '6038', '6037', '5230', '5208', '5214', '5209', '5213', '5231', '5212', '5221', '5220', '5219', '5218', '5225', '5236', '5211', '5215', '5241', '5240', '5183', '5169', '5179', '5178', '5177', '5187', '5175', '5242', '5239', '5104', '5103', '5248', '5176', '5017', '6039', '5016', '5014', '5013', '5012', '5011',
      '5010', '5009', '5008', '5006', '5015', '5078', '5077', '5076', '5075', '5007', '5073', '5005', '5079', '5074','5255', '6035',
@@ -100,7 +104,8 @@ class SubjectSpider(scrapy.Spider):
             item['useTime'] = int(re.findall(r"\d+", useTimeStr)[0])
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
-            print(item)
+            # print(item)
+            self.saveItem(item)
 
     def parseContent(self, contents):
         resultContent = []
@@ -121,6 +126,10 @@ class SubjectSpider(scrapy.Spider):
     def closed(self, reason):
         print('总共获取', self.count, '页')
         return
+
+    def saveItem(self, item):
+        self.xkwSubject.insert_one(item)
+        # print('mongo 保存成功')
 
 
 

@@ -12,6 +12,9 @@ class SubjectSpider(scrapy.Spider):
     start_urls = [
         "http://zujuan.xkw.com/czsx/zsd5119/qt1102o2/"
     ]
+    myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
+    subjectData = myclient["SubjectData"]
+    xkwSubject = subjectData['xkw_subject']
 
     def parse(self, response):
         for sel in response.css('div[class*="quesbox question"]'):
@@ -52,8 +55,5 @@ class SubjectSpider(scrapy.Spider):
         return resultContent
 
     def saveItem(self, item):
-        myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
-        subjectData = myclient["SubjectData"]
-        xkwSubject = subjectData['xkw_subject']
-        xkwSubject.insert_one(item)
+        self.xkwSubject.insert_one(item)
         print('mongo 保存成功')
