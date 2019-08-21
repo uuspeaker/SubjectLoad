@@ -94,6 +94,6 @@ if __name__ == '__main__':
     a.verify_proxies()
     print (a.proxies)
     proxie = a.proxies
-    with open('proxies.txt', 'a') as f:
+    with open('proxies2.txt', 'a') as f:
         for proxy in proxie:
             f.write(proxy + '\n')

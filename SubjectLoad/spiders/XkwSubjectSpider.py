@@ -14,11 +14,11 @@ class SubjectSpider(scrapy.Spider):
     firtPart = "http://zujuan.xkw.com/czsx/zsd"
     thirdPart = "/o2p"
     parentId = '6042'
-    parentIndex = 0
+    parentIndex = -1
     currentPage = 1
     pageIndex = 1
     start_urls = [
-        'http://zujuan.xkw.com/czsx/zsd6042/o2p1'
+        'http://www.baidu.com/'
     ]
     # file = open('subject.json', mode='wb')
     downLoadCount = 0
@@ -63,6 +63,7 @@ class SubjectSpider(scrapy.Spider):
 
 
     def parse(self, response):
+        proxy = self.get_random_proxy()
         subject = response.css('div[class*="quesbox question"]')
         #如果页面没有找到题目,则跳到下一个节点开始解析
         if len(subjects) == 0:
@@ -80,7 +81,7 @@ class SubjectSpider(scrapy.Spider):
         if maxPage > self.currentPage:
             nextPage = self.currentPage + 1
             url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(url=url, proxy=proxy, callback=self.parse)
         #若是最后一页但还不是最后节点, 则开始解析下一个节点
         if maxPage <= self.currentPage and self.parentIndex + 1 <  len(self.parentIds):
             self.gotoNextParentId()
@@ -90,7 +91,7 @@ class SubjectSpider(scrapy.Spider):
         self.parentId = self.parentIds[self.parentIndex]
         nextPage = 1
         url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-        yield scrapy.Request(url=url, callback=self.parse)
+        yield scrapy.Request(url=url, proxy=proxy, callback=self.parse)
 
     def getCurrentPage(self, response):
         currentPage =  int(response.xpath('//input[@id="iptGotoNum"]/@value').extract_first())
@@ -167,13 +168,25 @@ class SubjectSpider(scrapy.Spider):
 
     def closed(self, reason):
         print('本次下载', self.downLoadCount, '页')
-        self.downLoadLog.insert_one({
+        self.downloadLog.insert_one({
             'date': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
             'info': '本次下载' + str(self.downLoadCount) + '页'
         })
         myclient.close()
         myclient = ''
         return
+
+    def get_random_proxy(self):
+        while 1:
+            # with open('D:/program/vue/SubjectLoad/SubjectLoad\spiders/proxies.txt', 'r') as f:
+            with open('SubjectLoad/util/proxies.txt', 'r') as f:
+                proxies = f.readlines()
+            if proxies:
+                break
+            else:
+                time.sleep(1)
+        proxy = random.choice(proxies).strip()
+        return proxy
 
 
 

@@ -1,6 +1,8 @@
 import scrapy
 import re
 import pymongo
+import random
+import os
 
 from SubjectLoad.SubjectItem import SubjectItem
 
@@ -17,6 +19,8 @@ class SubjectSpider(scrapy.Spider):
     xkwSubject = subjectData['test']
 
     def parse(self, response):
+        proxy = self.get_random_proxy()
+        print('===========proxy', proxy)
         for sel in response.css('div[class*="quesbox question"]'):
             # print(sel.extract())
             item = SubjectItem()
@@ -36,7 +40,7 @@ class SubjectSpider(scrapy.Spider):
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
             print(item)
-            self.saveItem(item)
+            # self.saveItem(item)
 
         print('+++++++++', response.request.headers)
 
@@ -59,4 +63,16 @@ class SubjectSpider(scrapy.Spider):
     def saveItem(self, item):
         self.xkwSubject.insert_one(item)
         print('mongo 保存成功')
+
+    def get_random_proxy(self):
+        while 1:
+            # with open('D:/program/vue/SubjectLoad/SubjectLoad\spiders/proxies.txt', 'r') as f:
+            with open('SubjectLoad/util/proxies.txt', 'r') as f:
+                proxies = f.readlines()
+            if proxies:
+                break
+            else:
+                time.sleep(1)
+        proxy = random.choice(proxies).strip()
+        return proxy
 

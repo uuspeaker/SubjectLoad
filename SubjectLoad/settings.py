@@ -59,9 +59,9 @@ COOKIES_ = False
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
-    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware':None,
-    'SubjectLoad.middlewares.SubjectloadSpiderMiddleware': 543,
-    'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware':None
+    # 'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware':None,
+    # 'SubjectLoad.middlewares.SubjectloadSpiderMiddleware': 543,
+    # 'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware':None
 }
 
 # Enable or disable extensions
