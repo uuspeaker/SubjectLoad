@@ -25,10 +25,10 @@ class SubjectSpider(scrapy.Spider):
     # file = open('subject.json', mode='wb')
     downLoadCount = 0
     myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
-    subjectData = myclient["SubjectData"]
-    xkwSubject = subjectData['xkw_subject']
-    downloadResult = subjectData['download_result']
-    downloadLog = subjectData['download_log']
+    subjectDB = myclient["SubjectData"]
+    xkwSubject = subjectDB['XkwSubject']
+    downloadResult = subjectDB['DownloadResult']
+    downloadLog = subjectDB['DownloadLog']
 
     parentIds = ['6042', '6041', '5119', '5118', '5117', '4685', '5093', '5088', '5087', '5249', '5080', '5004', '5002', '5003','5001', '5092', '5094', '4962', '5101', '5100', '5098', '5199', '5162', '4982', '4980', '5102', '4979', '5099', '5194', '5193', '5192', '5190', '5189', '5188', '4972', '4984', '4983', '4971', '4970', '4969', '4976', '4975', '4974', '4978', '5195', '4968', '4964', '5116', '5115', '4967', '4966', '5157', '5191', '5105', '5174', '5173', '5172', '5171', '5164', '4977', '5170', '5185', '5184', '5246', '5228', '5207', '5206', '5163', '5245', '5244', '5238', '5237', '5226', '5222', '5217', '5216', '5210', '5186', '5235', '5168', '5167', '5166', '5165', '5234', '5224', '5223', '5233', '5232', '5243', '6038', '6037', '5230', '5208', '5214', '5209', '5213', '5231', '5212', '5221', '5220', '5219', '5218', '5225', '5236', '5211', '5215', '5241', '5240', '5183', '5169', '5179', '5178', '5177', '5187', '5175', '5242', '5239', '5104', '5103', '5248', '5176', '5017', '6039', '5016', '5014', '5013', '5012', '5011',
      '5010', '5009', '5008', '5006', '5015', '5078', '5077', '5076', '5075', '5007', '5073', '5005', '5079', '5074','5255', '6035',
@@ -72,36 +72,47 @@ class SubjectSpider(scrapy.Spider):
         #如果页面没有找到题目,则跳到下一个节点开始解析
         if len(subjects) == 0:
             print('未找到任何题目', subjects)
-            self.gotoNextParentId()
-            return
+            # self.gotoNextParentId()
+            print('进入下一个节点')
+            self.parentIndex += 1
+            self.parentId = self.parentIds[self.parentIndex]
+            nextPage = 1
+            url = self.firtPart + self.parentId + self.thirdPart + str(nextPage)
+            yield scrapy.Request(url=url, callback=self.parse, meta={'dont_redirect': True,'handle_httpstatus_list': [301, 302]})
+        else:
+            #若有找到题目,则抽取题目并保存
+            self.parseData(response)
 
-        #若有找到题目,则抽取题目并保存
-        self.parseAndSaveData(response)
-
-        maxPage = self.getMaxPage(response)
-        #若已经是最后一页,且已经是最后一个节点,则结束
-        if maxPage <= self.currentPage and self.parentIndex + 1 >=  len(self.parentIds):
-            print('处理完所有节点')
-            return
-        # 若还不是最后一页,则继续下载
-        if maxPage > self.currentPage:
-            nextPage = self.currentPage + 1
-            url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy': self.proxy, 'referer:': 'http://zujuan.xkw.com/czsx/zsd4677'})
-        #若是最后一页但还不是最后节点, 则开始解析下一个节点
-        if maxPage <= self.currentPage and self.parentIndex + 1 <  len(self.parentIds):
-            self.gotoNextParentId()
+            maxPage = self.getMaxPage(response)
+            #若已经是最后一页,且已经是最后一个节点,则结束
+            if maxPage <= self.currentPage and self.parentIndex + 1 >= len(self.parentIds):
+                print('处理完所有节点')
+                return
+            # 若还不是最后一页,则继续下载
+            if maxPage > self.currentPage:
+                nextPage = self.currentPage + 1
+                url = self.firtPart + self.parentId + self.thirdPart + str(nextPage)
+                yield scrapy.Request(url=url, callback=self.parse, meta={'dont_redirect': True,'handle_httpstatus_list': [301, 302]})
+            #若是最后一页但还不是最后节点, 则开始解析下一个节点
+            if maxPage <= self.currentPage and self.parentIndex + 1 < len(self.parentIds):
+                # self.gotoNextParentId()
+                print('进入下一个节点')
+                self.parentIndex += 1
+                self.parentId = self.parentIds[self.parentIndex]
+                nextPage = 1
+                url = self.firtPart + self.parentId + self.thirdPart + str(nextPage)
+                yield scrapy.Request(url=url, callback=self.parse, meta={'dont_redirect': True, 'handle_httpstatus_list': [301, 302]})
 
     def gotoNextParentId(self):
         print('进入下一个节点')
         self.parentIndex += 1
         self.parentId = self.parentIds[self.parentIndex]
         nextPage = 1
-        url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-        yield scrapy.Request(url=url, proxy=proxy, callback=self.parse, meta={'proxy': self.proxy, 'referer:': 'http://zujuan.xkw.com/czsx/zsd4677'})
+        url = self.firtPart + self.parentId + self.thirdPart + str(nextPage)
+        yield scrapy.Request(url=url, callback=self.parse)
 
     def getCurrentPage(self, response):
-        currentPage =  int(response.xpath('//input[@id="iptGotoNum"]/@value').extract_first())
+        currentPage = int(response.xpath('//input[@id="iptGotoNum"]/@value').extract_first())
         return currentPage
 
     def getMaxPage(self, response):
@@ -109,32 +120,42 @@ class SubjectSpider(scrapy.Spider):
         maxPage = int(re.findall(r"\d+", maxPageNode)[0])
         return maxPage
 
-    def parseAndSaveData(self, response):
-        print('开始保存数据')
+    def parseData(self, response):
         currentPage = self.getCurrentPage(response)
         maxPage = self.getMaxPage(response)
         print(response.url, maxPage, currentPage)
 
-        downloadResult = self.downloadResult.find({},{'parentId': self.parentId})
-        #若查询的页面已经下载过,则不保存且直接跳到已经下载的页码
-        if downloadResult.currentPage and currentPage <= downloadResult.currentPage:
-            self.currentPage = downloadResult.currentPage
-            return
+        downloadParentData = self.downloadResult.find_one({'parentId': self.parentId})
+        print('历史下载记录为', downloadParentData)
+        # 若查询的页面已经下载过,则不保存且直接跳到已经下载的页码
+        if downloadParentData is not None:
+            if currentPage <= downloadParentData['currentPage']:
+                print('跳过已下载页面', currentPage)
+                self.currentPage = downloadParentData['currentPage']
+                return
+            else:
+                self.currentPage = currentPage
+                self.saveData(response)
         else:
             self.currentPage = currentPage
+            self.saveData(response)
 
-        #保存下载记录
-        #若不存在下载记录则新增
-        if downloadResult.currentPage:
+        # 保存下载记录
+        # 若不存在下载记录则新增
+        if downloadParentData is not None:
+            # 若已经有下载记录则更新
+            print('更新下载结果', self.currentPage)
+            self.downloadResult.update({'parentId': self.parentId}, {"$set": {'currentPage': self.currentPage}})
+        else:
+            print('新增下载结果', self.currentPage)
             self.downloadResult.insert_one({
                 'parentId': self.parentId,
                 'maxPage': maxPage,
                 'currentPage': currentPage
             })
-        else:
-            #若已经有下载记录则更新
-            self.downloadResult.update_one({'parentId': self.parentId},{ "$set": {'currentPage': self.currentPage}})
 
+    def saveData(self, response):
+        print('开始保存数据',self.currentPage)
         self.downLoadCount += 1
         for sel in response.css('div[class*="quesbox question"]'):
             # print(sel.extract())
@@ -155,8 +176,8 @@ class SubjectSpider(scrapy.Spider):
             item['useTime'] = int(re.findall(r"\d+", useTimeStr)[0])
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
-            print(item)
-            # self.xkwSubject.insert_one(item)
+            # print(item)
+            self.xkwSubject.insert_one(item)
 
     def parseContent(self, contents):
         resultContent = []
