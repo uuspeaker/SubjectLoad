@@ -2,6 +2,7 @@ import scrapy
 import re
 import pymongo
 import time
+import random
 
 from SubjectLoad.SubjectItem import SubjectItem
 
@@ -18,7 +19,7 @@ class SubjectSpider(scrapy.Spider):
     currentPage = 1
     pageIndex = 1
     start_urls = [
-        'http://www.baidu.com/'
+        'https://www.21cnjy.com/'
     ]
     # file = open('subject.json', mode='wb')
     downLoadCount = 0
@@ -64,7 +65,7 @@ class SubjectSpider(scrapy.Spider):
 
     def parse(self, response):
         proxy = self.get_random_proxy()
-        subject = response.css('div[class*="quesbox question"]')
+        subjects = response.css('div[class*="quesbox question"]')
         #如果页面没有找到题目,则跳到下一个节点开始解析
         if len(subjects) == 0:
             self.gotoNextParentId()
