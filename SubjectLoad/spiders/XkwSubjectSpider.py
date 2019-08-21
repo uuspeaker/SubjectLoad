@@ -4,6 +4,7 @@ import os
 import pickle
 import json
 import pymongo
+import time
 
 from SubjectLoad.SubjectItem import SubjectItem
 
@@ -12,11 +13,12 @@ class SubjectSpider(scrapy.Spider):
     name = "xkw2"
     allowed_domains = ["xkw.com"]
     index = 1
-    # parentIds = ['6042', '6041']
+    parentIds = ['4685', '6041']
     firtPart = "http://zujuan.xkw.com/czsx/zsd"
     thirdPart = "/o2p"
     parentId = '6042'
     parentIndex = 0
+    currentPage = 1
     pageIndex = 1
     start_urls = [
         'http://zujuan.xkw.com/czsx/zsd6042/o2p1'
@@ -26,8 +28,10 @@ class SubjectSpider(scrapy.Spider):
     myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
     subjectData = myclient["SubjectData"]
     xkwSubject = subjectData['xkw_subject']
+    downloadResult = subjectData['download_result']
+    downloadLog = subjectData['download_log']
 
-    parentIds = ['6042', '6041', '5119', '5118', '5117', '4685', '5093', '5088', '5087', '5249', '5080', '5004', '5002', '5003','5001', '5092', '5094', '4962', '5101', '5100', '5098', '5199', '5162', '4982', '4980', '5102', '4979', '5099', '5194', '5193', '5192', '5190', '5189', '5188', '4972', '4984', '4983', '4971', '4970', '4969', '4976', '4975', '4974', '4978', '5195', '4968', '4964', '5116', '5115', '4967', '4966', '5157', '5191', '5105', '5174', '5173', '5172', '5171', '5164', '4977', '5170', '5185', '5184', '5246', '5228', '5207', '5206', '5163', '5245', '5244', '5238', '5237', '5226', '5222', '5217', '5216', '5210', '5186', '5235', '5168', '5167', '5166', '5165', '5234', '5224', '5223', '5233', '5232', '5243', '6038', '6037', '5230', '5208', '5214', '5209', '5213', '5231', '5212', '5221', '5220', '5219', '5218', '5225', '5236', '5211', '5215', '5241', '5240', '5183', '5169', '5179', '5178', '5177', '5187', '5175', '5242', '5239', '5104', '5103', '5248', '5176', '5017', '6039', '5016', '5014', '5013', '5012', '5011',
+    parentIds2 = ['6042', '6041', '5119', '5118', '5117', '4685', '5093', '5088', '5087', '5249', '5080', '5004', '5002', '5003','5001', '5092', '5094', '4962', '5101', '5100', '5098', '5199', '5162', '4982', '4980', '5102', '4979', '5099', '5194', '5193', '5192', '5190', '5189', '5188', '4972', '4984', '4983', '4971', '4970', '4969', '4976', '4975', '4974', '4978', '5195', '4968', '4964', '5116', '5115', '4967', '4966', '5157', '5191', '5105', '5174', '5173', '5172', '5171', '5164', '4977', '5170', '5185', '5184', '5246', '5228', '5207', '5206', '5163', '5245', '5244', '5238', '5237', '5226', '5222', '5217', '5216', '5210', '5186', '5235', '5168', '5167', '5166', '5165', '5234', '5224', '5223', '5233', '5232', '5243', '6038', '6037', '5230', '5208', '5214', '5209', '5213', '5231', '5212', '5221', '5220', '5219', '5218', '5225', '5236', '5211', '5215', '5241', '5240', '5183', '5169', '5179', '5178', '5177', '5187', '5175', '5242', '5239', '5104', '5103', '5248', '5176', '5017', '6039', '5016', '5014', '5013', '5012', '5011',
      '5010', '5009', '5008', '5006', '5015', '5078', '5077', '5076', '5075', '5007', '5073', '5005', '5079', '5074','5255', '6035',
      '4906', '4905', '5270', '5994', '5993', '5992', '5962', '5072', '4724', '4716', '5071', '4709', '4708', '4707','4787', '4715', '5989', '4712', '4711', '4799', '4798', '6040', '4722', '4796', '4710', '5988', '5874', '5873','4794',
      '4793', '5902', '5900', '5891', '4797', '4745', '5887', '5901', '4763', '4738', '5889', '4764', '5921', '4736',
@@ -62,28 +66,69 @@ class SubjectSpider(scrapy.Spider):
 
 
     def parse(self, response):
-        self.parseData(response)
-        currentPage = int(response.xpath('//input[@id="iptGotoNum"]/@value').extract_first())
-        # maxPage = int(response.xpath('//a[@id="lastpage"]/@lastid').extract_first())
-        maxPageNode = response.xpath('//div[@class="page"]/span/text()').extract_first()
-        maxPage = int(re.findall(r"\d+",maxPageNode)[0])
-        print(response.url, maxPage, currentPage)
-
-        if maxPage > currentPage:
-            nextPage = currentPage + 1
-
-        if maxPage <= currentPage and self.parentIndex + 1 >=  len(self.parentIds):
+        subject = response.css('div[class*="quesbox question"]')
+        #如果页面没有找到题目,则跳到下一个节点开始解析
+        if len(subjects) == 0:
+            self.gotoNextParentId()
             return
 
-        if maxPage <= currentPage and self.parentIndex + 1 <  len(self.parentIds):
-            self.parentIndex += 1
-            self.parentId = self.parentIds[self.parentIndex]
-            nextPage = 1
+        #若有找到题目,则抽取题目并保存
+        self.parseAndSaveData(response)
 
+        maxPage = self.getMaxPage(response)
+        #若已经是最后一页,且已经是最后一个节点,则结束
+        if maxPage <= self.currentPage and self.parentIndex + 1 >=  len(self.parentIds):
+            return
+        # 若还不是最后一页,则继续下载
+        if maxPage > self.currentPage:
+            nextPage = self.currentPage + 1
+            url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
+            yield scrapy.Request(url=url, callback=self.parse)
+        #若是最后一页但还不是最后节点, 则开始解析下一个节点
+        if maxPage <= self.currentPage and self.parentIndex + 1 <  len(self.parentIds):
+            self.gotoNextParentId()
+
+    def gotoNextParentId(self):
+        self.parentIndex += 1
+        self.parentId = self.parentIds[self.parentIndex]
+        nextPage = 1
         url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
         yield scrapy.Request(url=url, callback=self.parse)
 
-    def parseData(self, response):
+    def getCurrentPage(self, response):
+        currentPage =  int(response.xpath('//input[@id="iptGotoNum"]/@value').extract_first())
+        return currentPage
+
+    def getMaxPage(self, response):
+        maxPageNode = response.xpath('//div[@class="page"]/span/text()').extract_first()
+        maxPage = int(re.findall(r"\d+", maxPageNode)[0])
+        return maxPage
+
+    def parseAndSaveData(self, response):
+        currentPage = self.getCurrentPage(response)
+        maxPage = self.getMaxPage(response)
+        print(response.url, maxPage, currentPage)
+
+        downloadResult = self.downloadResult.find({},{'parentId': self.parentId})
+        #若查询的页面已经下载过,则不保存且直接跳到已经下载的页码
+        if downloadResult.currentPage and currentPage <= downloadResult.currentPage:
+            self.currentPage = downloadResult.currentPage
+            return
+        else:
+            self.currentPage = currentPage
+
+        #保存下载记录
+        #若不存在下载记录则新增
+        if downloadResult.currentPage:
+            self.downloadResult.insert_one({
+                'parentId': self.parentId,
+                'maxPage': maxPage,
+                'currentPage': currentPage
+            })
+        else:
+            #若已经有下载记录则更新
+            self.downloadResult.update_one({'parentId': self.parentId},{ "$set": {'currentPage': self.currentPage}})
+
         self.count += 1
         for sel in response.css('div[class*="quesbox question"]'):
             # print(sel.extract())
@@ -104,8 +149,8 @@ class SubjectSpider(scrapy.Spider):
             item['useTime'] = int(re.findall(r"\d+", useTimeStr)[0])
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
-            # print(item)
-            self.saveItem(item)
+            print(item)
+            self.xkwSubject.insert_one(item)
 
     def parseContent(self, contents):
         resultContent = []
@@ -124,12 +169,13 @@ class SubjectSpider(scrapy.Spider):
         return resultContent
 
     def closed(self, reason):
-        print('总共获取', self.count, '页')
+        print('本次下载', self.count, '页')
+        self.downLoadLog.insert_one({
+            'date': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            'info': '本次下载' + str(self.count) + '页'
+        })
         return
 
-    def saveItem(self, item):
-        self.xkwSubject.insert_one(item)
-        # print('mongo 保存成功')
 
 
 

@@ -6,7 +6,7 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
-
+import random
 
 class SubjectloadSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -71,6 +71,9 @@ class SubjectloadDownloaderMiddleware(object):
     def process_request(self, request, spider):
         # Called for each request that goes through the downloader
         # middleware.
+        proxy = self.get_random_proxy()
+        print("this is request ip:" + proxy)
+        request.meta['proxy'] = proxy
 
         # Must either:
         # - return None: continue processing this request
@@ -82,12 +85,30 @@ class SubjectloadDownloaderMiddleware(object):
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
+        # 如果返回的response状态不是200，重新生成当前request对象
+        if response.status != 200:
+            proxy = self.get_random_proxy()
+            print("this is response ip:" + proxy)
+            # 对当前reque加上代理
+            request.meta['proxy'] = proxy
+            return request
 
         # Must either;
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
         return response
+
+    def get_random_proxy(self):
+        while 1:
+            with open('proxies2.txt', 'r') as f:
+                proxies = f.readlines()
+            if proxies:
+                break
+            else:
+                time.sleep(1)
+        proxy = random.choice(proxies).strip()
+        return proxy
 
     def process_exception(self, request, exception, spider):
         # Called when a download handler or a process_request()

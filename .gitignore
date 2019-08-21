@@ -1,1 +1,2 @@
-__pycache__/*.pyc
+SubjectLoad/__pycache__/*.pyc
+SubjectLoad/spider/__pycache__/*.pyc

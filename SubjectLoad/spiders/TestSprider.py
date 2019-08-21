@@ -1,16 +1,20 @@
 import scrapy
 import re
 import pymongo
+from bs4 import BeautifulSoup
+import requests
+import random
 
+from fake_useragent import UserAgent
 from SubjectLoad.SubjectItem import SubjectItem
 
 
 class SubjectSpider(scrapy.Spider):
     name = "test"
     allowed_domains = ["xkw.com"]
-    parentId = '5119'
+    parentId = '51199'
     start_urls = [
-        "http://zujuan.xkw.com/czsx/zsd5119/qt1102o2/"
+        "http://zujuan.xkw.com/czsx/zsd51198/qt1102o2/"
     ]
     myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
     subjectData = myclient["SubjectData"]
@@ -36,7 +40,9 @@ class SubjectSpider(scrapy.Spider):
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
             print(item)
-            self.saveItem(item)
+            # self.saveItem(item)
+
+        print('+++++++++', response.request.headers)
 
     def parseContent(self, contents):
         resultContent = []
@@ -57,3 +63,4 @@ class SubjectSpider(scrapy.Spider):
     def saveItem(self, item):
         self.xkwSubject.insert_one(item)
         print('mongo 保存成功')
+
