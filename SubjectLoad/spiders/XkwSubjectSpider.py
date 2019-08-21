@@ -173,8 +173,8 @@ class SubjectSpider(scrapy.Spider):
             'date': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
             'info': '本次下载' + str(self.downLoadCount) + '页'
         })
-        myclient.close()
-        myclient = ''
+        self.myclient.close()
+        self.myclient = ''
         return
 
     def get_random_proxy(self):
