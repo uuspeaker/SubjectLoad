@@ -81,7 +81,7 @@ class SubjectSpider(scrapy.Spider):
         if maxPage > self.currentPage:
             nextPage = self.currentPage + 1
             url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-            yield scrapy.Request(url=url, proxy=proxy, callback=self.parse)
+            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy': proxy})
         #若是最后一页但还不是最后节点, 则开始解析下一个节点
         if maxPage <= self.currentPage and self.parentIndex + 1 <  len(self.parentIds):
             self.gotoNextParentId()
@@ -91,7 +91,7 @@ class SubjectSpider(scrapy.Spider):
         self.parentId = self.parentIds[self.parentIndex]
         nextPage = 1
         url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-        yield scrapy.Request(url=url, proxy=proxy, callback=self.parse)
+        yield scrapy.Request(url=url, proxy=proxy, callback=self.parse, meta={'proxy': proxy})
 
     def getCurrentPage(self, response):
         currentPage =  int(response.xpath('//input[@id="iptGotoNum"]/@value').extract_first())
