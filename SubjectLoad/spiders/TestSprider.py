@@ -2,7 +2,6 @@ import scrapy
 import re
 import pymongo
 
-from fake_useragent import UserAgent
 from SubjectLoad.SubjectItem import SubjectItem
 
 
