@@ -18,8 +18,9 @@ class SubjectSpider(scrapy.Spider):
     parentIndex = -1
     currentPage = 1
     pageIndex = 1
+    proxy = ''
     start_urls = [
-        'https://www.21cnjy.com/'
+        'https://www.21cnjy.com'
     ]
     # file = open('subject.json', mode='wb')
     downLoadCount = 0
@@ -64,10 +65,13 @@ class SubjectSpider(scrapy.Spider):
 
 
     def parse(self, response):
-        proxy = self.get_random_proxy()
+        self.proxy = self.get_random_proxy()
+        print('获取代理服务器',self.proxy)
         subjects = response.css('div[class*="quesbox question"]')
+        print('题目长度为', len(subjects))
         #如果页面没有找到题目,则跳到下一个节点开始解析
         if len(subjects) == 0:
+            print('未找到任何题目', subjects)
             self.gotoNextParentId()
             return
 
@@ -77,22 +81,24 @@ class SubjectSpider(scrapy.Spider):
         maxPage = self.getMaxPage(response)
         #若已经是最后一页,且已经是最后一个节点,则结束
         if maxPage <= self.currentPage and self.parentIndex + 1 >=  len(self.parentIds):
+            print('处理完所有节点')
             return
         # 若还不是最后一页,则继续下载
         if maxPage > self.currentPage:
             nextPage = self.currentPage + 1
             url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy': proxy})
+            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy': self.proxy, 'referer:': 'http://zujuan.xkw.com/czsx/zsd4677'})
         #若是最后一页但还不是最后节点, 则开始解析下一个节点
         if maxPage <= self.currentPage and self.parentIndex + 1 <  len(self.parentIds):
             self.gotoNextParentId()
 
     def gotoNextParentId(self):
+        print('进入下一个节点')
         self.parentIndex += 1
         self.parentId = self.parentIds[self.parentIndex]
         nextPage = 1
         url = 'http://zujuan.xkw.com/czsx/zsd' + self.parentId + self.thirdPart + str(nextPage)
-        yield scrapy.Request(url=url, proxy=proxy, callback=self.parse, meta={'proxy': proxy})
+        yield scrapy.Request(url=url, proxy=proxy, callback=self.parse, meta={'proxy': self.proxy, 'referer:': 'http://zujuan.xkw.com/czsx/zsd4677'})
 
     def getCurrentPage(self, response):
         currentPage =  int(response.xpath('//input[@id="iptGotoNum"]/@value').extract_first())
@@ -104,6 +110,7 @@ class SubjectSpider(scrapy.Spider):
         return maxPage
 
     def parseAndSaveData(self, response):
+        print('开始保存数据')
         currentPage = self.getCurrentPage(response)
         maxPage = self.getMaxPage(response)
         print(response.url, maxPage, currentPage)
@@ -149,7 +156,7 @@ class SubjectSpider(scrapy.Spider):
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
             print(item)
-            self.xkwSubject.insert_one(item)
+            # self.xkwSubject.insert_one(item)
 
     def parseContent(self, contents):
         resultContent = []
