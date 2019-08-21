@@ -1,9 +1,6 @@
 import scrapy
 import re
 import pymongo
-from bs4 import BeautifulSoup
-import requests
-import random
 
 from fake_useragent import UserAgent
 from SubjectLoad.SubjectItem import SubjectItem
@@ -12,13 +9,13 @@ from SubjectLoad.SubjectItem import SubjectItem
 class SubjectSpider(scrapy.Spider):
     name = "test"
     allowed_domains = ["xkw.com"]
-    parentId = '51199'
+    parentId = '5119'
     start_urls = [
-        "http://zujuan.xkw.com/czsx/zsd51198/qt1102o2/"
+        "http://zujuan.xkw.com/czsx/zsd5119/qt1102o2/"
     ]
     myclient = pymongo.MongoClient('mongodb://129.211.21.250:27017/')
     subjectData = myclient["SubjectData"]
-    xkwSubject = subjectData['xkw_subject']
+    xkwSubject = subjectData['test']
 
     def parse(self, response):
         for sel in response.css('div[class*="quesbox question"]'):
@@ -40,7 +37,7 @@ class SubjectSpider(scrapy.Spider):
             item['answer'] = 'http://im.zujuan.xkw.com/Answer/' + item['id'] + '/2/843/14/28/' + item['key']
             item['parse'] = 'http://im.zujuan.xkw.com/Parse/' + item['id'] + '/2/843/14/28/' + item['key']
             print(item)
-            # self.saveItem(item)
+            self.saveItem(item)
 
         print('+++++++++', response.request.headers)
 

@@ -101,7 +101,7 @@ class SubjectloadDownloaderMiddleware(object):
 
     def get_random_proxy(self):
         while 1:
-            with open('proxies2.txt', 'r') as f:
+            with open('proxies.txt', 'r') as f:
                 proxies = f.readlines()
             if proxies:
                 break
