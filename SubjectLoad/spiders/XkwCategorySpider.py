@@ -1,5 +1,4 @@
 import scrapy
-
 from SubjectLoad.SubjectItem import SubjectItem
 
 
